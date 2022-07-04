@@ -32,5 +32,9 @@ powershell-command [command] [args]
 ## Detailed Summary
 
 Execute a powershell command. 
-Note that the same powershell runspace is used, meaning variables and function can be reused in later commands. Also some powershell .NET framework commands do not exist in powershell .NET Core. 
+Note that:
+ - this plugin works only on windows
+ - some powershell .NET framework commands do not exist in powershell .NET Core
+ - The plugin does not work when payload is built as single file. Due to an open powershell SDK bug : https://github.com/PowerShell/PowerShell/issues/13540
+ - the same powershell runspace is used, meaning variables and function can be reused in later commands. 
   
