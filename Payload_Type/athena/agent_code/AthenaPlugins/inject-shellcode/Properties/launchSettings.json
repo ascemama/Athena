@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "inject-shellcode": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Users\\antoine\\source\\repos\\Athena\\Payload_Type\\athena\\agent_code\\Athena\\bin\\x64\\Release\\net6.0\\Athena.exe"
+    }
+  }
+}
