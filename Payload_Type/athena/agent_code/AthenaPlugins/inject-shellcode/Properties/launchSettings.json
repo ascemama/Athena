@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "inject-shellcode": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Users\\antoine\\Desktop\\No-AV\\athena070711\\Athena.exe"
+    }
+  }
+}
