@@ -13,6 +13,15 @@ class PowerShellScriptArguments(TaskArguments):
                 description="shellcode file",
                 parameter_group_info=[ParameterGroupInfo(ui_position=1,required=True)],
             ),
+            CommandParameter(
+                name="timer",
+                display_name="seconds to wait before getting result",
+                type=ParameterType.Number
+            ),
+            CommandParameter(
+                name="procID",
+                display_name="process ID to inject to. If 0, inject into current implant process",
+                type=ParameterType.Number),
         ]
     async def parse_arguments(self):
         if len(self.command_line.strip()) == 0:
@@ -29,7 +38,7 @@ class PowerShellScriptCommand(CommandBase):
     cmd = "inject-shellcode"
     needs_admin = False
     help_cmd = ""
-    description = "Inject a shellcode in the agent process"
+    description = "Inject a shellcode in a process"
     version = 1
     is_exit = False
     is_file_browse = False
